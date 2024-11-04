@@ -1,6 +1,6 @@
 package com.auction.notification.kafka.order;
 
-public record Users(
+public record User(
         Long userId,
         String firstName,
         String lastName,

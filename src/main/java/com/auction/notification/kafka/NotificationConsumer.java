@@ -1,6 +1,7 @@
 package com.auction.notification.kafka;
 
 import com.auction.notification.email.EmailService;
+import com.auction.notification.kafka.bid.BidWinnerConfirmation;
 import com.auction.notification.kafka.order.OrderConfirmation;
 import com.auction.notification.kafka.payment.PaymentConfirmation;
 import com.auction.notification.notification.Notification;
@@ -14,8 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 
-import static com.auction.notification.notification.NotificationType.ORDER_CONFIRMATION;
-import static com.auction.notification.notification.NotificationType.PAYMENT_CONFIRMATION;
+import static com.auction.notification.notification.NotificationType.*;
 import static java.lang.String.format;
 
 @Service
@@ -63,6 +63,27 @@ public class NotificationConsumer {
                 orderConfirmation.totalAmount(),
                 orderConfirmation.orderReference(),
                 orderConfirmation.products()
+        );
+    }
+
+    @KafkaListener(topics = "bid-topic")
+    public void consumeBidConfirmationNotification(BidWinnerConfirmation bidWinnerConfirmation) throws MessagingException {
+        log.info(format("Consuming the message from bid-topic Topic:: %s", bidWinnerConfirmation));
+        notificationRepository.save(
+                Notification.builder()
+                        .type(BID_WINNER_CONFIRMATION)
+                        .notificationDate(LocalDateTime.now())
+                        .bidWinnerConfirmation((bidWinnerConfirmation))
+                        .build()
+        );
+        var userFullName = bidWinnerConfirmation.user().firstName() + " " + bidWinnerConfirmation.user().lastName();
+        emailService.sendBidConfirmationEmail(
+                bidWinnerConfirmation.user().emailAddress(),
+                userFullName,
+                bidWinnerConfirmation.bigAmount(),
+                bidWinnerConfirmation.bidId(),
+                bidWinnerConfirmation.product()
+
         );
     }
 }

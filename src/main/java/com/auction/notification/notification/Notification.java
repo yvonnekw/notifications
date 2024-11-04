@@ -1,5 +1,6 @@
 package com.auction.notification.notification;
 
+import com.auction.notification.kafka.bid.BidWinnerConfirmation;
 import com.auction.notification.kafka.order.OrderConfirmation;
 import com.auction.notification.kafka.payment.PaymentConfirmation;
 import lombok.*;
@@ -22,4 +23,5 @@ public class Notification {
     private LocalDateTime notificationDate;
     private OrderConfirmation orderConfirmation;
     private PaymentConfirmation paymentConfirmation;
+    private BidWinnerConfirmation bidWinnerConfirmation;
 }

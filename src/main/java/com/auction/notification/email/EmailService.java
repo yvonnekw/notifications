@@ -5,6 +5,7 @@ import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
@@ -20,6 +21,7 @@ import java.util.Map;
 import static com.auction.notification.email.EmailTemplates.ORDER_CONFIRMATION;
 import static com.auction.notification.email.EmailTemplates.PAYMENT_CONFIRMATION;
 
+import static com.auction.notification.email.EmailTemplates.BID_WINNER_CONFIRMATION;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -82,6 +84,41 @@ public class EmailService {
         variables.put("totalAmount", amount);
         variables.put("orderReference", orderReference);
         variables.put("products", products);
+        Context context = new Context();
+        context.setVariables(variables);
+        messageHelper.setSubject(ORDER_CONFIRMATION.getSubject());
+
+        try {
+            String htmlTemplate = templateEngine.process(templateName, context);
+            messageHelper.setText(htmlTemplate, true);
+
+            messageHelper.setTo(destinationEmail);
+            mailSender.send(mimeMessage);
+            log.info(format("INFO - Email Successfully send to %s with template %s, ", destinationEmail, templateName));
+        } catch (MessagingException e) {
+            log.warn("WARNING - Cannot send email to {} ", destinationEmail);
+        }
+    }
+
+    @Async
+    public void sendBidConfirmationEmail(
+            String destinationEmail,
+            String userFullName,
+            BigDecimal bidAmount,
+            Long bidId,
+            Product product
+    ) throws MessagingException {
+        MimeMessage mimeMessage = mailSender.createMimeMessage();
+        MimeMessageHelper messageHelper =
+                new MimeMessageHelper(mimeMessage, MimeMessageHelper.MULTIPART_MODE_RELATED, UTF_8.name());
+        messageHelper.setFrom("contact@auction.com");
+        final String templateName = BID_WINNER_CONFIRMATION.getTemplate();
+
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("userName", userFullName);
+        variables.put("bidAmount", bidAmount);
+        variables.put("bidId", bidId);
+        variables.put("product", product);
         Context context = new Context();
         context.setVariables(variables);
         messageHelper.setSubject(ORDER_CONFIRMATION.getSubject());
